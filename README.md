@@ -1,1 +1,3 @@
-# Online-Food-Order-Management-System
+<code>📝 PENDING → ✅ CONFIRMED → 👨‍🍳 PREPARING → 🚚 OUT FOR DELIVERY → 🎉 DELIVERED
+      ↓
+    ❌ CANCELLED</code>

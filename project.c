@@ -90,7 +90,7 @@ typedef struct OrderHistory {
     struct OrderHistory *right;
 } OrderHistory;
 
-/* 8. CIRCULAR LINKED LIST - Promo Codes */
+/* 8. SINGLY LINKED LIST - Promo Codes (Replaced Circular Linked List) */
 typedef struct PromoCode {
     char code[20];
     float discount; /* percentage */
@@ -111,7 +111,7 @@ typedef struct CartItem {
 FoodItem *menuHead = NULL;           /* Singly Linked List */
 CartItem *cartHead = NULL;           /* Doubly Linked List - Shopping Cart */
 CartItem *cartTail = NULL;
-PromoCode *promoHead = NULL;         /* Circular Linked List */
+PromoCode *promoHead = NULL;         /* Singly Linked List */
 OrderStack *orderStackTop = NULL;    /* Stack */
 Delivery *deliveryFront = NULL;      /* Queue Front */
 Delivery *deliveryRear = NULL;       /* Queue Rear */
@@ -143,7 +143,7 @@ void removeFromCart(int itemId);
 void clearCart();
 float calculateCartTotal();
 
-/* Circular Linked List - Promo Codes */
+/* Singly Linked List - Promo Codes (Replaced Circular Linked List) */
 void addPromoCode(const char *code, float discount);
 float applyPromoCode(const char *code, float total);
 void displayPromoCodes();
@@ -424,22 +424,21 @@ float calculateCartTotal() {
     return total;
 }
 
-/* =============================== CIRCULAR LINKED LIST - PROMO CODES =============================== */
+/* =============================== SINGLY LINKED LIST - PROMO CODES =============================== */
 void addPromoCode(const char *code, float discount) {
     PromoCode *newCode = (PromoCode*)malloc(sizeof(PromoCode));
     strcpy(newCode->code, code);
     newCode->discount = discount;
+    newCode->next = NULL;
     
     if (promoHead == NULL) {
-        newCode->next = newCode; /* Points to itself */
         promoHead = newCode;
     } else {
-        PromoCode *last = promoHead;
-        while (last->next != promoHead) {
-            last = last->next;
+        PromoCode *current = promoHead;
+        while (current->next != NULL) {
+            current = current->next;
         }
-        last->next = newCode;
-        newCode->next = promoHead;
+        current->next = newCode;
     }
     
     printf("✓ Promo code %s added (%.0f%% discount)\n", code, discount);
@@ -452,7 +451,7 @@ float applyPromoCode(const char *code, float total) {
     }
     
     PromoCode *current = promoHead;
-    do {
+    while (current != NULL) {
         if (strcmp(current->code, code) == 0) {
             float discount = total * (current->discount / 100);
             float newTotal = total - discount;
@@ -461,7 +460,7 @@ float applyPromoCode(const char *code, float total) {
             return newTotal;
         }
         current = current->next;
-    } while (current != promoHead);
+    }
     
     printf("Invalid promo code!\n");
     return total;
@@ -478,10 +477,10 @@ void displayPromoCodes() {
     printf("────────────────────────\n");
     
     PromoCode *current = promoHead;
-    do {
+    while (current != NULL) {
         printf("%-10s\t%.0f%%\n", current->code, current->discount);
         current = current->next;
-    } while (current != promoHead);
+    }
 }
 
 /* =============================== ORDER MANAGEMENT =============================== */
@@ -1004,6 +1003,15 @@ void saveData() {
     saveUsersInorder(userRoot, userFile);
     fclose(userFile);
     
+    /* Save Promo Codes */
+    FILE *promoFile = fopen("promo.dat", "w");
+    PromoCode *promoCurrent = promoHead;
+    while (promoCurrent != NULL) {
+        fprintf(promoFile, "%s,%.2f\n", promoCurrent->code, promoCurrent->discount);
+        promoCurrent = promoCurrent->next;
+    }
+    fclose(promoFile);
+    
     printf("✓ All data saved successfully!\n");
 }
 
@@ -1032,6 +1040,17 @@ void loadData() {
             userRoot = insertUser(userRoot, newUser);
         }
         fclose(userFile);
+    }
+    
+    /* Load Promo Codes */
+    FILE *promoFile = fopen("promo.dat", "r");
+    if (promoFile) {
+        char code[20];
+        float discount;
+        while (fscanf(promoFile, "%[^,],%f\n", code, &discount) == 2) {
+            addPromoCode(code, discount);
+        }
+        fclose(promoFile);
     }
     
     /* Load Default Users if none */
